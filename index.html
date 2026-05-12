@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Advanced Personal Finance Tracker</title>
+    <title data-i18n="appTitle">Advanced Personal Finance Tracker</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -14,50 +14,40 @@
       <div class="skeleton__block"></div>
     </div>
 
-    <div class="app">
+    <main id="main" class="app">
       <header class="app__header">
         <div>
-          <p class="app__eyebrow" data-i18n="eyebrow">Personal Finance</p>
-          <h1 class="app__title" data-i18n="appTitle">Advanced Finance Tracker</h1>
-          <p class="app__subtitle" data-i18n="appSubtitle">
-            Track income, expenses, and your balance with clarity.
-          </p>
+          <p class="app__eyebrow" data-i18n="eyebrow"></p>
+          <h1 class="app__title" data-i18n="appTitle"></h1>
+          <p class="app__subtitle" data-i18n="appSubtitle"></p>
         </div>
         <div class="app__actions">
-          <button class="btn btn--ghost" id="langToggleBtn" type="button" aria-label="Switch language">
-            中文
-          </button>
-          <button class="btn btn--ghost" id="themeToggleBtn" type="button" data-i18n="lightMode">
-            Light Mode
-          </button>
-          <button class="btn btn--accent" id="exportCsvBtn" type="button" data-i18n="exportCsv">
-            Export CSV
-          </button>
-          <button class="btn btn--ghost" id="resetFiltersBtn" type="button" data-i18n="resetFilters">
-            Reset Filters
-          </button>
+          <button class="btn btn--ghost" id="langToggleBtn" type="button" data-i18n-aria="aria_switch_language">中文</button>
+          <button class="btn btn--ghost" id="themeToggleBtn" type="button" data-i18n="lightMode">Light Mode</button>
+          <button class="btn btn--accent" id="exportCsvBtn" type="button" data-i18n="exportCsv">Export CSV</button>
+          <button class="btn btn--ghost" id="resetFiltersBtn" type="button" data-i18n="resetFilters">Reset Filters</button>
         </div>
       </header>
 
-      <section class="summary" aria-label="Financial summary">
+      <section class="summary" data-i18n-aria="aria_financial_summary">
         <div class="card summary__card">
-          <p class="summary__label" data-i18n="totalBalance">Total Balance</p>
+          <p class="summary__label" data-i18n="totalBalance"></p>
           <h2 class="summary__value" id="totalBalance">$0.00</h2>
         </div>
         <div class="card summary__card">
-          <p class="summary__label" data-i18n="totalIncome">Total Income</p>
+          <p class="summary__label" data-i18n="totalIncome"></p>
           <h2 class="summary__value summary__value--income" id="totalIncome">$0.00</h2>
         </div>
         <div class="card summary__card">
-          <p class="summary__label" data-i18n="totalExpenses">Total Expenses</p>
+          <p class="summary__label" data-i18n="totalExpenses"></p>
           <h2 class="summary__value summary__value--expense" id="totalExpenses">$0.00</h2>
         </div>
       </section>
 
       <section class="card chart">
         <div class="transactions__header">
-          <h3 class="section-title" data-i18n="cashFlowOverview">Cash Flow Overview</h3>
-          <p class="transactions__meta" data-i18n="incomeVsExpense">Income vs Expense</p>
+          <h3 class="section-title" data-i18n="cashFlowOverview"></h3>
+          <p class="transactions__meta" data-i18n="incomeVsExpense"></p>
         </div>
         <canvas
           id="financeChart"
@@ -66,21 +56,27 @@
           role="img"
           aria-label="Bar chart showing total income versus total expenses"
           data-i18n-aria="chartAriaLabel"
-        >
-          <p>Bar chart showing total income versus total expenses.</p>
-        </canvas>
+          aria-describedby="chartAccessibleText chartLegend"
+        ></canvas>
+        <div id="chartLegend" class="chart-legend" data-i18n-aria="aria_chart_legend"></div>
+        <button id="toggleChartTableBtn" class="chart-table-toggle" type="button" aria-controls="chartAccessibleText" aria-expanded="false" data-i18n-aria="chart_table_toggle" data-i18n="chart_table_toggle">View data table</button>
+        <div id="chartAccessibleText" class="sr-only" aria-live="polite" hidden>
+          <p><span data-i18n="srIncomeLabel">Total Income:</span> <span id="srIncome">$0.00</span></p>
+          <p><span data-i18n="srExpensesLabel">Total Expenses:</span> <span id="srExpenses">$0.00</span></p>
+          <p><span data-i18n="srBalanceLabel">Total Balance:</span> <span id="srBalance">$0.00</span></p>
+        </div>
       </section>
 
       <section class="grid">
         <div class="card form">
-          <h3 class="section-title" data-i18n="addTransactionHeading">Add Transaction</h3>
+          <h3 class="section-title" data-i18n="addTransactionHeading"></h3>
           <form id="transactionForm" class="form__grid" autocomplete="off">
             <label class="form__field">
               <span data-i18n="formTitle">Title</span>
               <input
                 id="titleInput"
                 type="text"
-                placeholder="e.g., Freelance Payment"
+                data-i18n-placeholder="titlePlaceholder"
                 aria-describedby="titleError"
                 required
               />
@@ -92,7 +88,7 @@
               <input
                 id="amountInput"
                 type="number"
-                placeholder="e.g., 1200 or -45"
+                data-i18n-placeholder="amountPlaceholder"
                 aria-describedby="amountError"
                 required
               />
@@ -124,12 +120,8 @@
             </label>
 
             <div class="form__actions">
-              <button class="btn btn--primary" type="submit" id="submitBtn" data-i18n="addTransactionBtn">
-                Add Transaction
-              </button>
-              <button class="btn btn--ghost" type="button" id="cancelEditBtn" data-i18n="cancelEdit" hidden>
-                Cancel Edit
-              </button>
+              <button class="btn btn--primary" type="submit" id="submitBtn" data-i18n="addTransactionBtn">Add Transaction</button>
+              <button class="btn btn--ghost" type="button" id="cancelEditBtn" data-i18n="cancelEdit" hidden>Cancel Edit</button>
             </div>
           </form>
         </div>
@@ -139,7 +131,7 @@
           <div class="filters__grid">
             <label class="form__field">
               <span data-i18n="formCategory">Category</span>
-              <select id="filterCategory" aria-label="Filter by category">
+              <select id="filterCategory" data-i18n-aria="aria_filter_category">
                 <option value="all" data-i18n="allCategories">All categories</option>
                 <option value="Salary" data-i18n="catSalary">Salary</option>
                 <option value="Business" data-i18n="catBusiness">Business</option>
@@ -156,7 +148,7 @@
 
             <label class="form__field">
               <span data-i18n="formTitle2">Type</span>
-              <select id="filterType" aria-label="Filter by type">
+              <select id="filterType" data-i18n-aria="aria_filter_type">
                 <option value="all" data-i18n="all">All</option>
                 <option value="income" data-i18n="income">Income</option>
                 <option value="expense" data-i18n="expense">Expense</option>
@@ -165,68 +157,55 @@
 
             <label class="form__field form__field--full">
               <span data-i18n="searchByTitle">Search by title</span>
-              <input id="searchInput" type="text" placeholder="Start typing..." aria-label="Search transactions by title" />
+              <input id="searchInput" type="text" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="aria_search_input" />
             </label>
           </div>
         </div>
       </section>
 
-      <section class="card transactions" aria-label="Transaction list">
+      <section class="card transactions" data-i18n-aria="aria_transaction_list">
         <div class="transactions__header">
-          <h3 class="section-title" data-i18n="transactions">Transactions</h3>
-          <p class="transactions__meta" id="resultsCount" aria-live="polite">0 results</p>
+          <h3 class="section-title" data-i18n="transactions"></h3>
+          <p class="transactions__meta" id="resultsCount" aria-live="polite"></p>
         </div>
 
         <div class="transactions__list" id="transactionsList">
           <div class="transactions__empty">
-            <div class="empty__icon" aria-hidden="true">+</div>
+            <button class="empty__icon empty-add-btn" type="button" data-i18n-aria="addFirst">+<span class="sr-only">Add first transaction</span></button>
             <p data-i18n="noTransactions">No transactions yet. Add your first one to get started.</p>
-            <button class="btn btn--accent empty-add-btn" type="button" data-i18n="addFirst">
-              Add First Transaction
-            </button>
+            <button class="btn btn--accent empty-add-btn" type="button" data-i18n="addFirst">Add First Transaction</button>
           </div>
         </div>
       </section>
+    </main>
+
+    <div id="chartSummary" class="sr-only sr-only-focusable" tabindex="0" aria-live="polite" data-i18n="chart_summary">
     </div>
 
-    <div
-      class="modal"
-      id="confirmModal"
-      aria-hidden="true"
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="confirmTitle"
-    >
+    <div id="confirmModal" class="modal" aria-hidden="true" aria-modal="true" role="dialog">
       <div class="modal__backdrop" data-close="true"></div>
-      <div class="modal__content">
+      <div class="modal__content" role="document" aria-labelledby="confirmTitle">
         <h3 class="section-title" id="confirmTitle" data-i18n="deleteTitle">Delete transaction?</h3>
         <p class="modal__text" data-i18n="deleteBody">This action cannot be undone.</p>
         <div class="modal__actions">
-          <button class="btn btn--ghost" id="cancelDeleteBtn" type="button" data-i18n="cancel">
-            Cancel
-          </button>
-          <button class="btn btn--danger" id="confirmDeleteBtn" type="button" data-i18n="delete">
-            Delete
-          </button>
+          <button class="btn btn--ghost" id="cancelDeleteBtn" type="button" data-i18n="cancel">Cancel</button>
+          <button class="btn btn--danger" id="confirmDeleteBtn" type="button" data-i18n="delete">Delete</button>
         </div>
       </div>
     </div>
 
-    <!-- Cookie consent banner -->
-    <div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Cookie consent" aria-modal="true">
-      <p class="cookie-banner__text" data-i18n="cookieMsg">
-        We use cookies to store your preferences and transaction data locally.
-        No data is shared with third parties.
-      </p>
-      <div class="cookie-banner__actions">
-        <a href="privacy.html" class="cookie-banner__link" data-i18n="privacyPolicy">Privacy Policy</a>
-        <button class="btn btn--ghost" id="declineCookiesBtn" type="button" data-i18n="declineCookies">Decline</button>
-        <button class="btn btn--accent" id="acceptCookiesBtn" type="button" data-i18n="acceptCookies">Accept</button>
+    <div class="local-storage-notice" id="localStorageNotice" role="dialog" data-i18n-aria="aria_local_storage_notice" aria-modal="true">
+      <p class="local-storage-notice__text" data-i18n="localStorageMsg">We use Local Storage to store your preferences and transaction data locally. No data is shared with third parties.</p>
+      <div class="local-storage-notice__actions">
+        <a href="privacy.html" class="local-storage-notice__link" data-i18n="privacyPolicy">Privacy Policy</a>
+        <button class="btn btn--ghost" id="declineLocalStorageBtn" type="button" data-i18n="declineLocalStorage">Decline</button>
+        <button class="btn btn--accent" id="acceptLocalStorageBtn" type="button" data-i18n="acceptLocalStorage">Accept</button>
       </div>
     </div>
 
     <div class="toast-container" id="toastContainer" role="alert" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="main.js"></script>
+    <script src="i18n.js" defer></script>
+    <script src="main.js" defer></script>
   </body>
 </html>
