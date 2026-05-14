@@ -460,7 +460,7 @@ const renderTransactionItem = (tx) => {
       <div>
         <p class="transaction__title">${escapeHTML(tx.title)}</p>
         <div class="transaction__meta">
-          <span class="badge">${tx.category}</span>
+          <span class="badge">${escapeHTML(tx.category)}</span>
           <span>${formattedDate}</span>
         </div>
       </div>
