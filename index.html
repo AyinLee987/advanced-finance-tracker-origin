@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <a href="#notificationHistoryContainer" class="sr-only sr-only-focusable" data-i18n="skipToNotifications" data-i18n-aria="skipToNotifications">Skip to notification history</a>
     <div class="bg-gradient"></div>
     <div class="skeleton" id="skeleton" aria-hidden="true">
       <div class="skeleton__block"></div>
@@ -26,6 +27,19 @@
           <button class="btn btn--ghost" id="themeToggleBtn" type="button" data-i18n="lightMode">Light Mode</button>
           <button class="btn btn--accent" id="exportCsvBtn" type="button" data-i18n="exportCsv">Export CSV</button>
           <button class="btn btn--ghost" id="resetFiltersBtn" type="button" data-i18n="resetFilters">Reset Filters</button>
+          <button
+            id="openHistoryBtn"
+            class="btn btn--ghost history-open-btn"
+            type="button"
+            aria-label="Open notification history"
+            aria-controls="notificationHistoryContainer"
+            aria-expanded="false"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 3a4.5 4.5 0 0 0-4.5 4.5v2.1c0 1.3-.55 2.55-1.52 3.42L4.75 14.1V16h14.5v-1.9l-1.23-1.08A4.6 4.6 0 0 1 16.5 9.6V7.5A4.5 4.5 0 0 0 12 3Zm0 18a2.75 2.75 0 0 0 2.58-1.8H9.42A2.75 2.75 0 0 0 12 21Z" />
+            </svg>
+            <span id="notificationCount" class="notification-count" aria-hidden="true">0</span>
+          </button>
         </div>
       </header>
 
@@ -60,10 +74,31 @@
         ></canvas>
         <div id="chartLegend" class="chart-legend" data-i18n-aria="aria_chart_legend"></div>
         <button id="toggleChartTableBtn" class="chart-table-toggle" type="button" aria-controls="chartAccessibleText" aria-expanded="false" data-i18n-aria="chart_table_toggle" data-i18n="chart_table_toggle">View data table</button>
-        <div id="chartAccessibleText" class="sr-only" aria-live="polite" hidden>
-          <p><span data-i18n="srIncomeLabel">Total Income:</span> <span id="srIncome">$0.00</span></p>
-          <p><span data-i18n="srExpensesLabel">Total Expenses:</span> <span id="srExpenses">$0.00</span></p>
-          <p><span data-i18n="srBalanceLabel">Total Balance:</span> <span id="srBalance">$0.00</span></p>
+        <div id="chartAccessibleText" class="sr-only chart-accessible-data" aria-live="polite" role="region" data-i18n-aria="chartDataRegionAriaLabel">
+          <p class="chart-accessible-data__summary" id="chartDataSummary" data-i18n="chartDataSummary">Accessible chart data table with income, expenses, and balance values.</p>
+          <table class="chart-data-table">
+            <caption class="sr-only" data-i18n="chartDataTableCaption">Income, expenses, and balance summary table</caption>
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="chartDataMetric">Metric</th>
+                <th scope="col" data-i18n="chartDataValue">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row" data-i18n="srIncomeLabel">Total Income:</th>
+                <td id="srIncome">$0.00</td>
+              </tr>
+              <tr>
+                <th scope="row" data-i18n="srExpensesLabel">Total Expenses:</th>
+                <td id="srExpenses">$0.00</td>
+              </tr>
+              <tr>
+                <th scope="row" data-i18n="srBalanceLabel">Total Balance:</th>
+                <td id="srBalance">$0.00</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -177,6 +212,32 @@
           </div>
         </div>
       </section>
+
+      <section class="card settings">
+        <div class="transactions__header">
+          <h3 class="section-title" data-i18n="notificationSettingsHeading">Notification Settings</h3>
+          <p class="transactions__meta" data-i18n="notificationSettingsMeta">Control which notifications are stored and how the history behaves.</p>
+        </div>
+
+        <div class="settings__grid">
+          <label class="settings__option">
+            <input id="settingConfirmDismiss" type="checkbox" />
+            <span data-i18n="settingConfirmDismissLabel">Confirm before dismissing a notification</span>
+          </label>
+
+          <fieldset class="settings__group">
+            <legend data-i18n="settingRecordedTypesLegend">Record these notification types</legend>
+            <label class="settings__option settings__option--inline"><input id="settingRecordAdded" type="checkbox" /> <span data-i18n="settingRecordAddedLabel">Transaction added</span></label>
+            <label class="settings__option settings__option--inline"><input id="settingRecordUpdated" type="checkbox" /> <span data-i18n="settingRecordUpdatedLabel">Transaction updated</span></label>
+            <label class="settings__option settings__option--inline"><input id="settingRecordDeleted" type="checkbox" /> <span data-i18n="settingRecordDeletedLabel">Transaction deleted</span></label>
+            <label class="settings__option settings__option--inline"><input id="settingRecordExported" type="checkbox" /> <span data-i18n="settingRecordExportedLabel">CSV exported</span></label>
+          </fieldset>
+
+          <div class="settings__actions">
+            <button id="restoreNotificationDefaultsBtn" class="btn btn--ghost" type="button" data-i18n="restoreNotificationDefaults">Restore defaults</button>
+          </div>
+        </div>
+      </section>
     </main>
 
     <div id="chartSummary" class="sr-only sr-only-focusable" tabindex="0" aria-live="polite" data-i18n="chart_summary">
@@ -203,9 +264,122 @@
       </div>
     </div>
 
-    <div class="toast-container" id="toastContainer" role="alert" aria-live="polite" aria-atomic="true"></div>
+    <div class="toast-container" id="toastContainer" aria-hidden="true"></div>
+    <div id="srToast" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    
+    <div id="notificationBackdrop" class="notification-backdrop" aria-hidden="true"></div>
 
+    <div id="notificationHistoryContainer" class="notification-sidebar" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="notificationHistoryTitle" aria-describedby="notificationHistoryStatus" aria-hidden="true">
+      <div class="notification-header">
+        <h2 id="notificationHistoryTitle" data-i18n="notificationHistoryTitle">Notification History</h2>
+        <button id="historyToggleBtn" class="notification-toggle" type="button" aria-label="Close notification history">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="m6.7 5.3 12 12-1.4 1.4-12-12 1.4-1.4Zm12 1.4-12 12-1.4-1.4 12-12 1.4 1.4Z" />
+          </svg>
+        </button>
+      </div>
+      <div class="notification-content">
+        <p id="notificationHistoryStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+        <ul id="notificationHistory" aria-labelledby="notificationHistoryTitle" aria-live="polite" aria-relevant="additions removals text"></ul>
+        <button id="clearNotificationsBtn" class="btn btn--ghost" type="button" data-i18n-aria="clearNotifications" data-i18n="clearNotifications">Clear</button>
+      </div>
+    </div>
+
+    <div id="clearNotificationsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal__backdrop" data-close="true"></div>
+      <div class="modal__content" role="document" aria-labelledby="clearNotificationsTitle">
+        <h3 class="section-title" id="clearNotificationsTitle" data-i18n="clearNotificationsConfirmTitle">Clear notifications?</h3>
+        <p class="modal__text" id="clearNotificationsBody" data-i18n="clearNotificationsConfirmBody">This will permanently remove all notifications from your history.</p>
+        <div class="modal__actions">
+          <button class="btn btn--ghost" id="cancelClearNotificationsBtn" type="button" data-i18n="cancel">Cancel</button>
+          <button class="btn btn--danger" id="confirmClearNotificationsBtn" type="button" data-i18n="clearNotificationsConfirmConfirm">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dismissNotificationModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal__backdrop" data-close="true"></div>
+      <div class="modal__content" role="document" aria-labelledby="dismissNotificationTitle">
+        <h3 class="section-title" id="dismissNotificationTitle" data-i18n="dismissNotificationConfirmTitle">Dismiss notification?</h3>
+        <p class="modal__text" id="dismissNotificationBody" data-i18n="dismissNotificationConfirmBody">This will remove this notification from your history.</p>
+        <div class="modal__actions">
+          <button class="btn btn--ghost" id="cancelDismissNotificationBtn" type="button" data-i18n="cancel">Cancel</button>
+          <button class="btn btn--danger" id="confirmDismissNotificationBtn" type="button" data-i18n="dismissNotificationConfirmConfirm">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="restoreDefaultsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal__backdrop" data-close="true"></div>
+      <div class="modal__content" role="document" aria-labelledby="restoreDefaultsTitle">
+        <h3 class="section-title" id="restoreDefaultsTitle" data-i18n="restoreNotificationConfirmTitle">Restore defaults?</h3>
+        <p class="modal__text" id="restoreDefaultsBody" data-i18n="restoreNotificationConfirmBody">This will reset notification settings to their default values.</p>
+        <div class="modal__actions">
+          <button class="btn btn--ghost" id="cancelRestoreDefaultsBtn" type="button" data-i18n="cancel">Cancel</button>
+          <button class="btn btn--danger" id="confirmRestoreDefaultsBtn" type="button" data-i18n="restoreNotificationConfirmConfirm">Restore</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.7.2/build/global/luxon.min.js" defer></script>
+    <script src="dateUtils.js" defer></script>
     <script src="i18n.js" defer></script>
     <script src="main.js" defer></script>
+    <script>
+      (() => {
+        const ACTIVE_SELECTOR = 'script, iframe, object, embed';
+        const TOKEN_STORAGE_KEY = 'financeTrackerRuntimeToken';
+
+        let expectedToken = '';
+        try {
+          expectedToken = sessionStorage.getItem(TOKEN_STORAGE_KEY) || '';
+          if (!expectedToken) {
+            expectedToken = (window.crypto && crypto.randomUUID)
+              ? crypto.randomUUID()
+              : `rt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+            sessionStorage.setItem(TOKEN_STORAGE_KEY, expectedToken);
+          }
+        } catch (error) {
+          expectedToken = `rt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        }
+
+        const stampActiveNodes = (root) => {
+          const nodes = root.matches && root.matches(ACTIVE_SELECTOR)
+            ? [root]
+            : Array.from(root.querySelectorAll ? root.querySelectorAll(ACTIVE_SELECTOR) : []);
+
+          nodes.forEach((node) => {
+            node.setAttribute('data-runtime-token', expectedToken);
+          });
+        };
+
+        const removeUntrustedNodes = (node) => {
+          if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
+
+          if (node.matches(ACTIVE_SELECTOR) && node.getAttribute('data-runtime-token') !== expectedToken) {
+            node.remove();
+            return;
+          }
+
+          node.querySelectorAll(ACTIVE_SELECTOR).forEach((activeNode) => {
+            if (activeNode.getAttribute('data-runtime-token') !== expectedToken) {
+              activeNode.remove();
+            }
+          });
+        };
+
+        stampActiveNodes(document.documentElement);
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => removeUntrustedNodes(node));
+          });
+        });
+
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        window.__financeTrackerRuntimeToken = expectedToken;
+        window.__financeTrackerRuntimeObserver = observer;
+      })();
+    </script>
   </body>
 </html>
