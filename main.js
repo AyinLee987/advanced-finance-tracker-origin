@@ -117,6 +117,7 @@ const DEFAULT_TRANSLATIONS = {
     privacy_overview_text: "Advanced Finance Tracker (\"the App\") is a client-side web application. We are committed to protecting your privacy. This policy explains what data is collected, how it is stored, and your rights regarding that data.",
     notificationHistoryTitle: "Notification History",
     notificationHistoryEmpty: "No notifications.",
+    notificationHistoryStatus: "{count} notifications in history.",
     clearNotifications: "Clear notifications",
     dismissNotification: "Dismiss notification",
     notificationHistoryCleared: "Notifications cleared.",
@@ -230,6 +231,7 @@ const DEFAULT_TRANSLATIONS = {
     settingRecordExportedLabel: "CSV 已导出",
     restoreNotificationDefaults: "恢复默认设置",
     notificationSettingsReset: "通知设置已恢复为默认值。",
+    notificationHistoryStatus: "历史记录中有 {count} 条通知。",
   },
 };
 
@@ -258,6 +260,16 @@ const DEFAULT_ACTIONABLE_NOTIFICATION_KEYS = [
   'csvExported',
 ];
 let ACTIONABLE_NOTIFICATION_KEYS = new Set(DEFAULT_ACTIONABLE_NOTIFICATION_KEYS);
+const NOTIFICATION_MESSAGE_TO_KEY = {
+  'Transaction added.': 'transactionAdded',
+  'Transaction updated.': 'transactionUpdated',
+  'Transaction deleted.': 'transactionDeleted',
+  'CSV exported.': 'csvExported',
+  '交易已添加。': 'transactionAdded',
+  '交易已更新。': 'transactionUpdated',
+  '交易已删除。': 'transactionDeleted',
+  'CSV 已导出。': 'csvExported',
+};
 
 const setActionableNotificationKeys = (keys) => {
   ACTIONABLE_NOTIFICATION_KEYS = new Set(keys || []);
@@ -328,7 +340,9 @@ window.setNotificationDismissConfirmation = setNotificationDismissConfirmation;
 const loadNotificationHistory = () => {
   try {
     const raw = localStorage.getItem(NOTIF_HISTORY_KEY);
-    state.notificationHistory = raw ? JSON.parse(raw) : [];
+    state.notificationHistory = raw
+      ? JSON.parse(raw).map(normalizeNotificationHistoryItem).filter(Boolean)
+      : [];
   } catch (e) {
     state.notificationHistory = [];
   }
@@ -341,7 +355,8 @@ const fetchServerNotifications = async () => {
     const payload = await res.json();
     if (payload && Array.isArray(payload.items)) {
       const existing = new Set((state.notificationHistory || []).map(n => n.id));
-      const merged = payload.items.filter(i => !existing.has(i.id)).concat(state.notificationHistory || []);
+      const normalizedItems = payload.items.map(normalizeNotificationHistoryItem).filter(Boolean);
+      const merged = normalizedItems.filter(i => !existing.has(i.id)).concat(state.notificationHistory || []);
       state.notificationHistory = merged.slice(0, NOTIFICATION_HISTORY_LIMIT);
       saveNotificationHistory();
     }
@@ -494,17 +509,44 @@ const createChartLegendButton = ({ type, label, value, iconPath }) => {
   return button;
 };
 
+const getNotificationMessageKey = (notification) =>
+  notification?.key || notification?.messageKey || NOTIFICATION_MESSAGE_TO_KEY[notification?.message] || null;
+
+const getNotificationMessage = (notification, lang = state.lang) => {
+  if (!notification) return '';
+  const key = getNotificationMessageKey(notification);
+  if (key && translations[lang]?.[key]) {
+    return translations[lang][key];
+  }
+  return notification.message || '';
+};
+
+const normalizeNotificationHistoryItem = (notification) => {
+  if (!notification || typeof notification !== 'object') return null;
+
+  const key = getNotificationMessageKey(notification);
+  const fallbackMessage = key ? translations.en?.[key] : '';
+
+  return {
+    ...notification,
+    key,
+    messageKey: key,
+    message: notification.message || fallbackMessage || '',
+  };
+};
+
 const createNotificationHistoryItem = (notification) => {
+  const resolvedMessage = getNotificationMessage(notification);
   const li = document.createElement('li');
   li.setAttribute('role', 'listitem');
   li.tabIndex = 0;
   li.dataset.id = notification.id;
-  li.dataset.message = notification.message;
-  li.setAttribute('aria-label', notification.message);
+  li.dataset.message = resolvedMessage;
+  li.setAttribute('aria-label', resolvedMessage);
 
   const text = document.createElement('span');
   text.className = 'notif-text';
-  text.textContent = `[${new Date(notification.timestamp).toLocaleTimeString(state.lang)}] ${notification.message}`;
+  text.textContent = `[${new Date(notification.timestamp).toLocaleTimeString(state.lang)}] ${resolvedMessage}`;
 
   const dismissButton = document.createElement('button');
   dismissButton.className = 'notif-dismiss btn btn--ghost';
@@ -525,8 +567,9 @@ const renderNotificationHistory = () => {
   const count = Array.isArray(state.notificationHistory) ? state.notificationHistory.length : 0;
   if (dom.notificationHistoryStatus) {
     const emptyText = translations[state.lang]?.notificationHistoryEmpty || 'No notifications.';
+    const statusTemplate = translations[state.lang]?.notificationHistoryStatus || '{count} notifications in history.';
     dom.notificationHistoryStatus.textContent = count
-      ? `${count} ${count === 1 ? 'notification' : 'notifications'} in history.`
+      ? statusTemplate.replace('{count}', String(count))
       : emptyText;
   }
   if (!state.notificationHistory || state.notificationHistory.length === 0) {
@@ -744,7 +787,7 @@ const showToast = (message, variant = "success", opts = {}) => {
   const key = opts.key;
   if (dom.notificationHistory && key && ACTIONABLE_NOTIFICATION_KEYS.has(key)) {
     const nid = `n_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const notifObj = { id: nid, timestamp: Date.now(), message, key };
+    const notifObj = { id: nid, timestamp: Date.now(), message, key, messageKey: key };
     state.notificationHistory = [notifObj, ...(state.notificationHistory || [])];
     if (state.notificationHistory.length > NOTIFICATION_HISTORY_LIMIT) {
       state.notificationHistory = state.notificationHistory.slice(0, NOTIFICATION_HISTORY_LIMIT);
