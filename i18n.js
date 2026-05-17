@@ -199,7 +199,7 @@ window.TRANSLATIONS = {
     addTransactionHeading: "添加交易",
     formTitle: "标题",
     formAmount: "金额",
-    formType: "类型",
+    formCategory: "类别",
     formDate: "日期",
     selectCategory: "选择类别",
     addTransactionBtn: "添加交易",
