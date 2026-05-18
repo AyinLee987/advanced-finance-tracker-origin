@@ -1,9 +1,7 @@
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/tests/setupJest.js'],
-  testPathIgnorePatterns: ['<rootDir>/main.test.js'],
   collectCoverageFrom: [
-    'main.js',
     'api/**/*.js',
     'dateUtils.js',
     'i18n.js',
