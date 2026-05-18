@@ -175,7 +175,7 @@ const DEFAULT_TRANSLATIONS = {
     delete: "删除",
     privacyPolicy: "隐私政策",
     cookieMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptCookies: "接受",
     declineCookies: "拒绝",
     editBtn: "编辑",

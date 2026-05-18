@@ -222,7 +222,7 @@ window.TRANSLATIONS = {
     delete: "删除",
     privacyPolicy: "隐私政策",
     cookieMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptCookies: "接受",
     declineCookies: "拒绝",
     editBtn: "编辑",
@@ -309,11 +309,11 @@ window.TRANSLATIONS = {
       <p data-i18n="privacy_contact">如您对本隐私政策有疑问，请在项目 GitHub 仓库中提交 issue。</p>
     `,
     localStorageMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptLocalStorage: "接受",
     declineLocalStorage: "拒绝",
     cookieMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptCookies: "接受",
     declineCookies: "拒绝",
     chart_table_toggle: "查看数据表格",
