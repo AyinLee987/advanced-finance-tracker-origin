@@ -348,19 +348,7 @@ const loadNotificationHistory = () => {
 };
 
 const fetchServerNotifications = async () => {
-  try {
-    const res = await fetch('/api/notifications');
-    if (!res.ok) return;
-    const payload = await res.json();
-    if (payload && Array.isArray(payload.items)) {
-      const existing = new Set((state.notificationHistory || []).map(n => n.id));
-      const normalizedItems = payload.items.map(normalizeNotificationHistoryItem).filter(Boolean);
-      const merged = normalizedItems.filter(i => !existing.has(i.id)).concat(state.notificationHistory || []);
-      state.notificationHistory = merged.slice(0, NOTIFICATION_HISTORY_LIMIT);
-      saveNotificationHistory();
-    }
-  } catch (e) {
-  }
+  return;
 };
 
 const createSvgIcon = (pathD) => {
@@ -1734,14 +1722,24 @@ const initializeApp = () => {
   }
 
   if (dom.confirmClearNotificationsBtn) {
-    dom.confirmClearNotificationsBtn.addEventListener('click', () => {
-      state.notificationHistory = [];
-      saveNotificationHistory();
-      renderNotificationHistory();
-      updateHistoryButtons();
-      syncNotificationSettingsUI();
-      closeModal(dom.clearNotificationsModal, dom.notificationHistoryContainer?.classList.contains('is-visible') ? dom.notificationHistoryContainer : dom.openHistoryBtn);
-      showToast(translations[state.lang]?.notificationHistoryCleared || 'Notifications cleared.');
+    dom.confirmClearNotificationsBtn.addEventListener('click', async () => {
+      const originalText = dom.confirmClearNotificationsBtn.textContent;
+      dom.confirmClearNotificationsBtn.disabled = true;
+      dom.confirmClearNotificationsBtn.textContent = 'Clearing...';
+      dom.confirmClearNotificationsBtn.setAttribute('aria-busy', 'true');
+      try {
+        state.notificationHistory = [];
+        saveNotificationHistory();
+        renderNotificationHistory();
+        updateHistoryButtons();
+        syncNotificationSettingsUI();
+      } finally {
+        dom.confirmClearNotificationsBtn.disabled = false;
+        dom.confirmClearNotificationsBtn.textContent = originalText;
+        dom.confirmClearNotificationsBtn.removeAttribute('aria-busy');
+        closeModal(dom.clearNotificationsModal, dom.notificationHistoryContainer?.classList.contains('is-visible') ? dom.notificationHistoryContainer : dom.openHistoryBtn);
+        showToast(translations[state.lang]?.notificationHistoryCleared || 'Notifications cleared.');
+      }
     });
   }
 
