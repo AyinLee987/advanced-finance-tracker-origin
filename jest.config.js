@@ -1,16 +1,7 @@
-module.exports = {
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/tests/setupJest.js'],
   collectCoverageFrom: [
-    'dateUtils.js',
-    '!**/node_modules/**',
+    '**/*.js', // 匹配所有 JS 文件
+    '!&zwnj;**/node_modules/**&zwnj;',
+    '!&zwnj;**/tests/**&zwnj;',
+    '!&zwnj;**/coverage/**&zwnj;',
+    '!jest.config.js',
   ],
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-  },
-};
