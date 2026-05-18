@@ -1,7 +1,11 @@
+module.exports = {
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/tests/setupJest.js'],
   collectCoverageFrom: [
-    '**/*.js', // 匹配所有 JS 文件
-    '!&zwnj;**/node_modules/**&zwnj;',
-    '!&zwnj;**/tests/**&zwnj;',
-    '!&zwnj;**/coverage/**&zwnj;',
+    '**/*.js',
+    '!**/node_modules/**',
+    '!**/tests/**',
+    '!**/coverage/**',
     '!jest.config.js',
   ],
+};
