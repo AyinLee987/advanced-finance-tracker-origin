@@ -1886,14 +1886,8 @@ const initializeApp = () => {
 };
 
 bootstrapTranslations();
-if (typeof window.requestIdleCallback === 'function') {
-  try {
-    requestIdleCallback(() => {
-      try { initializeApp(); } catch (e) { console.error(e); }
-    }, { timeout: 2000 });
-  } catch (e) {
-    window.addEventListener('load', () => setTimeout(initializeApp, 200));
-  }
-} else {
-  window.addEventListener('load', () => setTimeout(initializeApp, 200));
+try {
+  initializeApp();
+} catch (e) {
+  console.error(e);
 }
