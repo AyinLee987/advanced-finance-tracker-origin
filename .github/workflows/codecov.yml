@@ -1,16 +1,12 @@
 name: Run tests and upload coverage
 
 on: 
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  push
 
 jobs:
   test:
     name: Run tests and collect coverage
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,21 +15,14 @@ jobs:
 
       - name: Set up Node
         uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run tests and generate coverage
+      - name: Run tests
         run: npx jest --coverage
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage/lcov.info 
-          
-          # 2. Token
-          token: ${{ secrets.CODECOV_TOKEN }} 
-          
-          fail_ci_if_error: true 
+          token: ${{ secrets.CODECOV_TOKEN }}
