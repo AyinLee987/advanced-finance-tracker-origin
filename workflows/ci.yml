@@ -1,36 +1,28 @@
-name: CI
+name: Run tests and upload coverage
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+on: 
+  push
 
 jobs:
   test:
+    name: Run tests and collect coverage
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: "npm"
+          fetch-depth: 2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Run tests with coverage
-        run: npm test
+      - name: Run tests
+        run: npx jest --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
