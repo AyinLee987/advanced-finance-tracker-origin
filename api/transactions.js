@@ -18,7 +18,7 @@
 // this is for demo purposes. In production, use a database.)
 let transactions = [];
 
-export default function handler(request, response) {
+function handler(request, response) {
   // Handle CORS preflight
   if (request.method === "OPTIONS") {
     response.status(200).end();
@@ -52,6 +52,9 @@ export default function handler(request, response) {
     response.status(500).json({ error: "Internal server error" });
   }
 }
+
+module.exports = handler;
+module.exports.default = handler;
 
 function handleGET(request, response) {
   const { category, type, search } = request.query || {};
