@@ -243,7 +243,6 @@ const bootstrapTranslations = () => {
   }
   translations = DEFAULT_TRANSLATIONS;
   window.TRANSLATIONS = translations;
-  console.warn('Translations not found on window; using DEFAULT_TRANSLATIONS fallback.');
 };
 
 const STORAGE_KEY = "financeTrackerData";
@@ -1042,7 +1041,8 @@ const renderChart = () => {
   const ctx = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
 
-  const displayWidth = canvas.clientWidth;
+  const rect = canvas.getBoundingClientRect && canvas.getBoundingClientRect();
+  const displayWidth = Math.round((rect && rect.width) || canvas.clientWidth || 800);
   const displayHeight = 260;
 
   canvas.width = displayWidth * dpr;
@@ -1102,13 +1102,16 @@ const renderChart = () => {
     ctx.fillText(t.expense || 'Expense', 160 + barWidth + gap, baseY + 20);
   } catch (e) {}
   
-  if (dom.srIncome && dom.srExpenses && dom.srBalance) {
+  if (dom.srIncome || dom.srExpenses || dom.srBalance) {
     const totalIncome = amounts.filter((a) => a > 0).reduce((s, a) => s + a, 0);
     const totalExpenses = Math.abs(amounts.filter((a) => a < 0).reduce((s, a) => s + a, 0));
     const totalBalance = totalIncome - totalExpenses;
-    dom.srIncome.textContent = formatCurrency(totalIncome);
-    dom.srExpenses.textContent = formatCurrency(totalExpenses);
-    dom.srBalance.textContent = formatCurrency(totalBalance);
+    const formattedIncome = formatCurrency(totalIncome);
+    const formattedExpenses = formatCurrency(totalExpenses);
+    const formattedBalance = formatCurrency(totalBalance);
+    if (dom.srIncome && dom.srIncome.textContent !== formattedIncome) dom.srIncome.textContent = formattedIncome;
+    if (dom.srExpenses && dom.srExpenses.textContent !== formattedExpenses) dom.srExpenses.textContent = formattedExpenses;
+    if (dom.srBalance && dom.srBalance.textContent !== formattedBalance) dom.srBalance.textContent = formattedBalance;
   }
   const chartLegend = document.getElementById('chartLegend');
   const chartRegion = document.getElementById('chartAccessibleText');
@@ -1279,12 +1282,43 @@ const setupChartPointNavigation = () => {
 
 window.addEventListener('DOMContentLoaded', setupChartPointNavigation);
 
+const scheduleChartRender = () => {
+  if (typeof window.requestIdleCallback === 'function') {
+    try {
+      requestIdleCallback(() => {
+        try { renderChart(); } catch (e) {}
+      }, { timeout: 500 });
+      return;
+    } catch (e) {}
+  }
+  setTimeout(() => {
+    try { renderChart(); } catch (e) {}
+  }, 200);
+};
+
 const renderApp = () => {
   renderSummary();
-  renderTransactions();
-  renderChart();
+  if (typeof window.requestIdleCallback === 'function') {
+    try {
+      requestIdleCallback(() => {
+        try {
+          renderTransactions();
+        } catch (e) {}
+      }, { timeout: 1000 });
+    } catch (e) {
+      setTimeout(() => {
+        try { renderTransactions(); } catch (e) {}
+      }, 200);
+    }
+  } else {
+    setTimeout(() => {
+      try { renderTransactions(); } catch (e) {}
+    }, 200);
+  }
+
   updateI18n();
   updateChartSummary();
+  scheduleChartRender();
 };
 
 const updateI18n = () => {
@@ -1395,8 +1429,17 @@ const FOCUSABLE_SELECTOR = [
 
 const getFocusableElements = (container) =>
   Array.from(container?.querySelectorAll(FOCUSABLE_SELECTOR) || []).filter((el) => {
-    const style = window.getComputedStyle(el);
-    return style.visibility !== 'hidden' && style.display !== 'none';
+    try {
+      if (el.hidden) return false;
+      if (el.getAttribute('aria-hidden') === 'true') return false;
+      if (el.closest('[aria-hidden="true"]')) return false;
+      if ('disabled' in el && el.disabled) return false;
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      return true;
+    } catch (e) {
+      return false;
+    }
   });
 
 const isAnyModalOpen = () => Boolean(document.querySelector('.modal.is-open'));
@@ -1457,7 +1500,6 @@ const initializeApp = () => {
   state.filters.category = dom.filterCategory.value;
   state.filters.type = dom.filterType.value;
   state.filters.search = dom.searchInput.value;
-  // Prevent selecting a future date in the date picker
   try {
     if (dom.dateInput) {
       dom.dateInput.max = dateUtils.normalizeToLocalDateKey(new Date().toISOString());
@@ -1824,4 +1866,14 @@ const initializeApp = () => {
 };
 
 bootstrapTranslations();
-initializeApp();
+if (typeof window.requestIdleCallback === 'function') {
+  try {
+    requestIdleCallback(() => {
+      try { initializeApp(); } catch (e) { console.error(e); }
+    }, { timeout: 2000 });
+  } catch (e) {
+    window.addEventListener('load', () => setTimeout(initializeApp, 200));
+  }
+} else {
+  window.addEventListener('load', () => setTimeout(initializeApp, 200));
+}
