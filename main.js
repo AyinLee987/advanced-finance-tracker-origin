@@ -313,6 +313,9 @@ const state = {
   pendingNotificationDismissId: null,
 };
 
+let chartDisplayWidth = null;
+let chartResizeObserver = null;
+
 const saveNotificationHistory = () => {
   try {
     localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(state.notificationHistory));
@@ -1022,6 +1025,25 @@ const formatDate = (dateString) => {
   return dateUtils.formatLocalDate(dateString, "en-US");
 };
 
+const observeChartSize = () => {
+  const canvas = dom.financeChart;
+  if (!canvas || typeof window.ResizeObserver !== 'function') return;
+
+  if (chartResizeObserver) {
+    chartResizeObserver.disconnect();
+  }
+
+  chartResizeObserver = new window.ResizeObserver((entries) => {
+    const entry = entries[0];
+    const nextWidth = Math.round(entry?.contentRect?.width || 0);
+    if (!nextWidth || nextWidth === chartDisplayWidth) return;
+    chartDisplayWidth = nextWidth;
+    scheduleChartRender();
+  });
+
+  chartResizeObserver.observe(canvas);
+};
+
 const renderChart = () => {
   const canvas = dom.financeChart;
   if (!canvas) return;
@@ -1029,8 +1051,7 @@ const renderChart = () => {
   const ctx = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
 
-  const rect = canvas.getBoundingClientRect && canvas.getBoundingClientRect();
-  const displayWidth = Math.round((rect && rect.width) || canvas.clientWidth || 800);
+  const displayWidth = Math.max(1, Math.round(chartDisplayWidth || 800));
   const displayHeight = 260;
 
   canvas.width = displayWidth * dpr;
@@ -1421,9 +1442,9 @@ const getFocusableElements = (container) =>
       if (el.hidden) return false;
       if (el.getAttribute('aria-hidden') === 'true') return false;
       if (el.closest('[aria-hidden="true"]')) return false;
+      if (el.hasAttribute('inert') || el.closest('[inert]')) return false;
       if ('disabled' in el && el.disabled) return false;
-      const style = window.getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      if (typeof el.tabIndex === 'number' && el.tabIndex < 0) return false;
       return true;
     } catch (e) {
       return false;
@@ -1493,7 +1514,8 @@ const initializeApp = () => {
       dom.dateInput.max = dateUtils.normalizeToLocalDateKey(new Date().toISOString());
     }
   } catch (e) {}
-  
+
+  observeChartSize();
   renderApp();
 
   setTimeout(() => {
