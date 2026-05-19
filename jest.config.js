@@ -1,11 +1,23 @@
+
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/tests/setupJest.js'],
+
   collectCoverageFrom: [
-    'api/**/*.js',
-    'dateUtils.js',
-    'i18n.js',
+    '**/*.js',
+    '!**/node_modules/**',
+    '!**/tests/**',
+    '!**/coverage/**',
+    '!**/dist/**',
+    '!**/*.min.js',
+    '!jest.config.js',
+    '!vitest.config.js',
+    '!build-assets.js',
+    '!serve-local.js',
+    '!run-axe.js',
+    '!scripts/**/*.js',
   ],
+
   coverageThreshold: {
     global: {
       branches: 80,

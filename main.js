@@ -1182,7 +1182,7 @@ const setupChartDataToggle = () => {
   });
 };
 
-window.addEventListener('DOMContentLoaded', setupChartDataToggle);
+window.addEventListener('DOMContentLoaded', setupChartDataToggle, { once: true });
 
 const updateChartSummary = () => {
   const chartSummary = document.getElementById('chartSummary');
@@ -1225,7 +1225,7 @@ const setupChartKeyboardNavigation = () => {
   });
 };
 
-window.addEventListener('DOMContentLoaded', setupChartKeyboardNavigation);
+window.addEventListener('DOMContentLoaded', setupChartKeyboardNavigation, { once: true });
 
 const setupChartPointNavigation = () => {
   const chartLegend = document.getElementById('chartLegend');
@@ -1289,7 +1289,7 @@ const setupChartPointNavigation = () => {
   });
 };
 
-window.addEventListener('DOMContentLoaded', setupChartPointNavigation);
+window.addEventListener('DOMContentLoaded', setupChartPointNavigation, { once: true });
 
 const scheduleChartRender = () => {
   if (typeof window.requestIdleCallback === 'function') {
