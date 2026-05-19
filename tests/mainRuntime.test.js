@@ -220,4 +220,98 @@ describe('main runtime flows', () => {
 
     jest.useRealTimers();
   });
+
+  it('initializes safely with a minimal DOM and handles consent controls', () => {
+    jest.resetModules();
+    localStorage.clear();
+    document.documentElement.innerHTML = `
+      <div id="skeleton"></div>
+      <form id="transactionForm"></form>
+      <input id="titleInput" />
+      <input id="amountInput" />
+      <select id="categoryInput"></select>
+      <input id="dateInput" />
+      <small id="titleError"></small>
+      <small id="amountError"></small>
+      <small id="categoryError"></small>
+      <small id="dateError"></small>
+      <button id="submitBtn" type="button"></button>
+      <button id="cancelEditBtn" type="button"></button>
+      <select id="filterCategory"><option value="all">all</option></select>
+      <select id="filterType"><option value="all">all</option></select>
+      <input id="searchInput" />
+      <button id="resetFiltersBtn" type="button"></button>
+      <button id="exportCsvBtn" type="button"></button>
+      <button id="themeToggleBtn" type="button"></button>
+      <button id="historyToggleBtn" type="button"></button>
+      <input id="settingConfirmDismiss" type="checkbox" />
+      <input id="settingRecordAdded" type="checkbox" />
+      <input id="settingRecordUpdated" type="checkbox" />
+      <input id="settingRecordDeleted" type="checkbox" />
+      <input id="settingRecordExported" type="checkbox" />
+      <div id="transactionsList"></div>
+      <div id="resultsCount"></div>
+      <div id="totalBalance"></div>
+      <div id="totalIncome"></div>
+      <div id="totalExpenses"></div>
+      <canvas id="financeChart"></canvas>
+      <div id="srIncome"></div>
+      <div id="srExpenses"></div>
+      <div id="srBalance"></div>
+      <div id="confirmModal"></div>
+      <button id="confirmDeleteBtn" type="button"></button>
+      <button id="cancelDeleteBtn" type="button"></button>
+      <div id="toastContainer"></div>
+      <div id="srToast"></div>
+      <div id="notificationHistoryContainer"></div>
+      <ul id="notificationHistory"></ul>
+      <div id="notificationHistoryStatus"></div>
+      <button id="openHistoryBtn" type="button"><span id="notificationCount"></span></button>
+      <div id="notificationBackdrop"></div>
+      <button id="clearNotificationsBtn" type="button"></button>
+      <button id="restoreNotificationDefaultsBtn" type="button"></button>
+      <div id="restoreDefaultsModal"></div>
+      <button id="confirmRestoreDefaultsBtn" type="button"></button>
+      <button id="cancelRestoreDefaultsBtn" type="button"></button>
+      <div id="clearNotificationsModal"></div>
+      <button id="confirmClearNotificationsBtn" type="button">Confirm</button>
+      <button id="cancelClearNotificationsBtn" type="button"></button>
+      <div id="dismissNotificationModal"></div>
+      <button id="confirmDismissNotificationBtn" type="button"></button>
+      <button id="cancelDismissNotificationBtn" type="button"></button>
+      <button id="langToggleBtn" type="button"></button>
+      <div id="localStorageNotice"></div>
+      <button id="acceptLocalStorageBtn" type="button"></button>
+      <button id="declineLocalStorageBtn" type="button"></button>
+    `;
+
+    window.financeDateUtils = {
+      normalizeToLocalDateKey: (value) => value,
+      isOnOrBeforeLocalDay: () => true,
+      formatMonthLabel: () => 'May 2026',
+      formatLocalDate: (value) => value,
+      compareLocalDateStringsDesc: () => 0,
+    };
+
+    require(path.join(__dirname, '..', 'i18n.js'));
+    require(path.join(__dirname, '..', 'main.js'));
+
+    const cookieBanner = document.getElementById('localStorageNotice');
+    const acceptBtn = document.getElementById('acceptLocalStorageBtn');
+    const declineBtn = document.getElementById('declineLocalStorageBtn');
+
+    expect(cookieBanner.style.display).toBe('flex');
+
+    acceptBtn.click();
+    expect(localStorage.getItem('localStorageConsent')).toBe('accepted');
+    expect(cookieBanner.style.display).toBe('none');
+
+    localStorage.removeItem('localStorageConsent');
+    cookieBanner.style.display = 'flex';
+    declineBtn.click();
+    expect(localStorage.getItem('localStorageConsent')).toBe('declined');
+    expect(cookieBanner.style.display).toBe('none');
+
+    delete window.financeDateUtils;
+  });
 });

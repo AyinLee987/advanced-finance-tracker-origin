@@ -33,8 +33,6 @@ describe('coverage targeted tests', () => {
   it('notifications POST truncates to 200 entries when file has many items', () => {
     jest.resetModules();
     const handler = require('../api/notifications.js');
-
-    // Simulate an existing large notifications file
     jest.spyOn(fs, 'existsSync').mockReturnValue(true);
     const big = new Array(300).fill({ note: 'old' });
     jest.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify(big));

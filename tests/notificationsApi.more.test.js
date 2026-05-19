@@ -21,7 +21,6 @@ describe('notifications API additional branches', () => {
   it('POST accepts string body and persists (write path)', () => {
     const handler = loadHandler();
     jest.spyOn(fs, 'existsSync').mockReturnValue(false);
-    // allow writeFileSync to succeed
     jest.spyOn(fs, 'writeFileSync').mockImplementation(()=>{});
 
     const res = makeResponse();
