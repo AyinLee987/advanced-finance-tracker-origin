@@ -275,15 +275,15 @@ describe('main.js extended coverage tests', () => {
 
   it('handles language toggle and privacy link update', () => {
     const privacyLink = document.querySelector('.local-storage-notice__link');
-    expect(privacyLink.getAttribute('href')).toContain('lang=en');
+    expect(privacyLink.getAttribute('href')).toContain('privacy.html?lang=zh');
 
     const langToggleBtn = document.getElementById('langToggleBtn');
     langToggleBtn.click();
 
-    expect(privacyLink.getAttribute('href')).toContain('lang=zh');
+    expect(privacyLink.getAttribute('href')).toContain('privacy.html?lang=en');
 
     langToggleBtn.click();
-    expect(privacyLink.getAttribute('href')).toContain('lang=en');
+    expect(privacyLink.getAttribute('href')).toContain('privacy.html?lang=zh');
   });
 
   it('handles comprehensive filtering by category, type, and search', () => {

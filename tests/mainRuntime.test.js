@@ -10,6 +10,7 @@ describe('main runtime flows', () => {
     localStorage.clear();
     document.documentElement.innerHTML = read('index.html');
 
+
     window.financeDateUtils = {
       normalizeToLocalDateKey: (value) => value,
       formatMonthLabel: () => 'May 2026',
@@ -58,7 +59,7 @@ describe('main runtime flows', () => {
     expect(storedTransactions[0].title).toBe('Freelance Payment');
     expect(totalIncome.textContent).toBe('$1,200.00');
     expect(totalBalance.textContent).toBe('$1,200.00');
-    expect(notificationCount.textContent).toBe('1');
+    expect(notificationCount.textContent).toBe('2');
     expect(document.querySelector('#notificationHistory li')).not.toBeNull();
 
     filterCategory.value = 'Salary';
@@ -79,13 +80,13 @@ describe('main runtime flows', () => {
     themeToggleBtn.click();
     expect(document.body.classList.contains('theme-light')).toBe(true);
     expect(localStorage.getItem('financeTrackerTheme')).toBe('light');
-    expect(themeToggleBtn.textContent).toBe('Dark Mode');
+    expect(themeToggleBtn.textContent).toBe('深色模式');
 
     langToggleBtn.click();
-    expect(localStorage.getItem('financeTrackerLang')).toBe('zh');
-    expect(langToggleBtn.textContent).toBe('English');
-    expect(themeToggleBtn.textContent).toBe('浅色模式');
-    expect(privacyLink.getAttribute('href')).toBe('privacy.html?lang=zh');
+    expect(localStorage.getItem('financeTrackerLang')).toBe('en');
+    expect(langToggleBtn.textContent).toBe('中文');
+    expect(themeToggleBtn.textContent).toBe('Light Mode');
+    expect(privacyLink.getAttribute('href')).toBe('privacy.html?lang=en');
   });
 
   it('syncs notification settings with local storage and the visible controls', () => {
@@ -99,7 +100,7 @@ describe('main runtime flows', () => {
     confirmDismiss.checked = true;
     confirmDismiss.dispatchEvent(new Event('change', { bubbles: true }));
     expect(localStorage.getItem('financeTrackerConfirmNotificationDismiss')).toBe('true');
-    expect(clearNotificationsBtn.title).toBe('Confirm before dismissing a notification');
+    expect(clearNotificationsBtn.title).toBe('关闭通知前确认');
 
     recordUpdated.checked = false;
     recordDeleted.checked = false;
@@ -171,7 +172,7 @@ describe('main runtime flows', () => {
     expect(document.querySelectorAll('.edit-btn')).toHaveLength(2);
     const editButton = document.querySelectorAll('.edit-btn')[0];
     editButton.click();
-    expect(document.getElementById('submitBtn').textContent).toBe('Save Changes');
+    expect(document.getElementById('submitBtn').textContent).toBe('保存更改');
 
     document.getElementById('amountInput').value = '-55';
     document.getElementById('transactionForm').dispatchEvent(
@@ -194,19 +195,19 @@ describe('main runtime flows', () => {
     expect(remainingTransactions).toHaveLength(1);
     expect(document.getElementById('totalExpenses').textContent).toBe('$55.00');
     expect(document.getElementById('totalBalance').textContent).toBe('-$55.00');
-    expect(document.getElementById('notificationCount').textContent).toBe('4');
-    expect(document.querySelectorAll('#notificationHistory li')).toHaveLength(4);
+    expect(document.getElementById('notificationCount').textContent).toBe('5');
+    expect(document.querySelectorAll('#notificationHistory li')).toHaveLength(5);
 
     const chartToggleBtn = document.getElementById('toggleChartTableBtn');
     const chartRegion = document.getElementById('chartAccessibleText');
 
     chartToggleBtn.click();
     expect(chartRegion.classList.contains('is-visible')).toBe(true);
-    expect(chartToggleBtn.textContent).toBe('Hide data table');
+    expect(chartToggleBtn.textContent).toBe('隐藏数据表格');
 
     chartToggleBtn.click();
     expect(chartRegion.classList.contains('is-visible')).toBe(false);
-    expect(chartToggleBtn.textContent).toBe('View data table');
+    expect(chartToggleBtn.textContent).toBe('查看数据表格');
 
     const openHistoryBtn = document.getElementById('openHistoryBtn');
     const historyToggleBtn = document.getElementById('historyToggleBtn');
