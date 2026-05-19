@@ -16,6 +16,8 @@
     "test": "jest",
     "test:coverage": "jest --coverage --runInBand",
     "coverage:ci": "jest --coverage --runInBand --coverageReporters=text --coverageReporters=lcov --coverageReporters=json-summary",
+    "test:vitest": "vitest",
+    "test:vitest:coverage": "vitest --coverage",
     "lighthouse:ci": "lhci autorun --config=lighthouserc.json",
     "axe:ci": "node run-axe.js",
     "lint": "eslint ."

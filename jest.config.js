@@ -2,6 +2,7 @@
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/tests/setupJest.js'],
+  transformIgnorePatterns: ['node_modules'],
 
   collectCoverageFrom: [
     '**/*.js',
@@ -15,7 +16,6 @@ module.exports = {
     '!build-assets.js',
     '!serve-local.js',
     '!run-axe.js',
-    '!scripts/**/*.js',
   ],
 
   coverageThreshold: {
