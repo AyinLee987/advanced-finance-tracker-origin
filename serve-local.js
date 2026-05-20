@@ -1,4 +1,5 @@
 const express = require("express");
+const compression = require("compression");
 const { spawn } = require("child_process");
 const path = require("path");
 
@@ -7,6 +8,7 @@ const fs = require('fs');
 const rootDir = __dirname;
 const notificationsFile = path.join(rootDir, 'notifications.json');
 
+app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 const port = Number(process.env.PORT) || 4173;
 const shouldOpen = process.argv.includes("--open");

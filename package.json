@@ -10,9 +10,14 @@
     "serve": "node serve-local.js",
     "start": "node serve-local.js",
     "start:open": "node serve-local.js --open",
+    "serve:compressed": "node serve-compressed.js",
+    "build:assets": "node build-assets.js",
+    "purge:css": "npx purgecss --css style.css --content index.html main.js --output .",
     "test": "jest",
     "test:coverage": "jest --coverage --runInBand",
     "coverage:ci": "jest --coverage --runInBand --coverageReporters=text --coverageReporters=lcov --coverageReporters=json-summary",
+    "test:vitest": "vitest",
+    "test:vitest:coverage": "vitest --coverage",
     "lighthouse:ci": "lhci autorun --config=lighthouserc.json",
     "axe:ci": "node run-axe.js",
     "lint": "eslint ."
@@ -21,18 +26,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "compression": "^1.8.1",
     "luxon": "^3.7.2"
   },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",
     "axe-core": "^4.7.3",
+    "esbuild": "^0.28.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
-    "express": "^4.18.2",
+    "express": "^4.22.2",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "prettier": "^3.8.3",
-    "puppeteer-core": "^24.15.0"
+    "puppeteer-core": "^24.15.0",
+    "terser": "^5.47.1"
   }
 }

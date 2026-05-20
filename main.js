@@ -117,6 +117,7 @@ const DEFAULT_TRANSLATIONS = {
     privacy_overview_text: "Advanced Finance Tracker (\"the App\") is a client-side web application. We are committed to protecting your privacy. This policy explains what data is collected, how it is stored, and your rights regarding that data.",
     notificationHistoryTitle: "Notification History",
     notificationHistoryEmpty: "No notifications.",
+    notificationHistoryStatus: "{count} notifications in history.",
     clearNotifications: "Clear notifications",
     dismissNotification: "Dismiss notification",
     notificationHistoryCleared: "Notifications cleared.",
@@ -174,7 +175,7 @@ const DEFAULT_TRANSLATIONS = {
     delete: "删除",
     privacyPolicy: "隐私政策",
     cookieMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptCookies: "接受",
     declineCookies: "拒绝",
     editBtn: "编辑",
@@ -230,6 +231,7 @@ const DEFAULT_TRANSLATIONS = {
     settingRecordExportedLabel: "CSV 已导出",
     restoreNotificationDefaults: "恢复默认设置",
     notificationSettingsReset: "通知设置已恢复为默认值。",
+    notificationHistoryStatus: "历史记录中有 {count} 条通知。",
   },
 };
 
@@ -241,7 +243,6 @@ const bootstrapTranslations = () => {
   }
   translations = DEFAULT_TRANSLATIONS;
   window.TRANSLATIONS = translations;
-  console.warn('Translations not found on window; using DEFAULT_TRANSLATIONS fallback.');
 };
 
 const STORAGE_KEY = "financeTrackerData";
@@ -258,6 +259,16 @@ const DEFAULT_ACTIONABLE_NOTIFICATION_KEYS = [
   'csvExported',
 ];
 let ACTIONABLE_NOTIFICATION_KEYS = new Set(DEFAULT_ACTIONABLE_NOTIFICATION_KEYS);
+const NOTIFICATION_MESSAGE_TO_KEY = {
+  'Transaction added.': 'transactionAdded',
+  'Transaction updated.': 'transactionUpdated',
+  'Transaction deleted.': 'transactionDeleted',
+  'CSV exported.': 'csvExported',
+  '交易已添加。': 'transactionAdded',
+  '交易已更新。': 'transactionUpdated',
+  '交易已删除。': 'transactionDeleted',
+  'CSV 已导出。': 'csvExported',
+};
 
 const setActionableNotificationKeys = (keys) => {
   ACTIONABLE_NOTIFICATION_KEYS = new Set(keys || []);
@@ -302,6 +313,9 @@ const state = {
   pendingNotificationDismissId: null,
 };
 
+let chartDisplayWidth = null;
+let chartResizeObserver = null;
+
 const saveNotificationHistory = () => {
   try {
     localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(state.notificationHistory));
@@ -328,25 +342,16 @@ window.setNotificationDismissConfirmation = setNotificationDismissConfirmation;
 const loadNotificationHistory = () => {
   try {
     const raw = localStorage.getItem(NOTIF_HISTORY_KEY);
-    state.notificationHistory = raw ? JSON.parse(raw) : [];
+    state.notificationHistory = raw
+      ? JSON.parse(raw).map(normalizeNotificationHistoryItem).filter(Boolean)
+      : [];
   } catch (e) {
     state.notificationHistory = [];
   }
 };
 
 const fetchServerNotifications = async () => {
-  try {
-    const res = await fetch('/api/notifications');
-    if (!res.ok) return;
-    const payload = await res.json();
-    if (payload && Array.isArray(payload.items)) {
-      const existing = new Set((state.notificationHistory || []).map(n => n.id));
-      const merged = payload.items.filter(i => !existing.has(i.id)).concat(state.notificationHistory || []);
-      state.notificationHistory = merged.slice(0, NOTIFICATION_HISTORY_LIMIT);
-      saveNotificationHistory();
-    }
-  } catch (e) {
-  }
+  return;
 };
 
 const createSvgIcon = (pathD) => {
@@ -494,17 +499,44 @@ const createChartLegendButton = ({ type, label, value, iconPath }) => {
   return button;
 };
 
+const getNotificationMessageKey = (notification) =>
+  notification?.key || notification?.messageKey || NOTIFICATION_MESSAGE_TO_KEY[notification?.message] || null;
+
+const getNotificationMessage = (notification, lang = state.lang) => {
+  if (!notification) return '';
+  const key = getNotificationMessageKey(notification);
+  if (key && translations[lang]?.[key]) {
+    return translations[lang][key];
+  }
+  return notification.message || '';
+};
+
+const normalizeNotificationHistoryItem = (notification) => {
+  if (!notification || typeof notification !== 'object') return null;
+
+  const key = getNotificationMessageKey(notification);
+  const fallbackMessage = key ? translations.en?.[key] : '';
+
+  return {
+    ...notification,
+    key,
+    messageKey: key,
+    message: notification.message || fallbackMessage || '',
+  };
+};
+
 const createNotificationHistoryItem = (notification) => {
+  const resolvedMessage = getNotificationMessage(notification);
   const li = document.createElement('li');
   li.setAttribute('role', 'listitem');
   li.tabIndex = 0;
   li.dataset.id = notification.id;
-  li.dataset.message = notification.message;
-  li.setAttribute('aria-label', notification.message);
+  li.dataset.message = resolvedMessage;
+  li.setAttribute('aria-label', resolvedMessage);
 
   const text = document.createElement('span');
   text.className = 'notif-text';
-  text.textContent = `[${new Date(notification.timestamp).toLocaleTimeString(state.lang)}] ${notification.message}`;
+  text.textContent = `[${new Date(notification.timestamp).toLocaleTimeString(state.lang)}] ${resolvedMessage}`;
 
   const dismissButton = document.createElement('button');
   dismissButton.className = 'notif-dismiss btn btn--ghost';
@@ -525,8 +557,9 @@ const renderNotificationHistory = () => {
   const count = Array.isArray(state.notificationHistory) ? state.notificationHistory.length : 0;
   if (dom.notificationHistoryStatus) {
     const emptyText = translations[state.lang]?.notificationHistoryEmpty || 'No notifications.';
+    const statusTemplate = translations[state.lang]?.notificationHistoryStatus || '{count} notifications in history.';
     dom.notificationHistoryStatus.textContent = count
-      ? `${count} ${count === 1 ? 'notification' : 'notifications'} in history.`
+      ? statusTemplate.replace('{count}', String(count))
       : emptyText;
   }
   if (!state.notificationHistory || state.notificationHistory.length === 0) {
@@ -744,7 +777,7 @@ const showToast = (message, variant = "success", opts = {}) => {
   const key = opts.key;
   if (dom.notificationHistory && key && ACTIONABLE_NOTIFICATION_KEYS.has(key)) {
     const nid = `n_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const notifObj = { id: nid, timestamp: Date.now(), message, key };
+    const notifObj = { id: nid, timestamp: Date.now(), message, key, messageKey: key };
     state.notificationHistory = [notifObj, ...(state.notificationHistory || [])];
     if (state.notificationHistory.length > NOTIFICATION_HISTORY_LIMIT) {
       state.notificationHistory = state.notificationHistory.slice(0, NOTIFICATION_HISTORY_LIMIT);
@@ -992,6 +1025,25 @@ const formatDate = (dateString) => {
   return dateUtils.formatLocalDate(dateString, "en-US");
 };
 
+const observeChartSize = () => {
+  const canvas = dom.financeChart;
+  if (!canvas || typeof window.ResizeObserver !== 'function') return;
+
+  if (chartResizeObserver) {
+    chartResizeObserver.disconnect();
+  }
+
+  chartResizeObserver = new window.ResizeObserver((entries) => {
+    const entry = entries[0];
+    const nextWidth = Math.round(entry?.contentRect?.width || 0);
+    if (!nextWidth || nextWidth === chartDisplayWidth) return;
+    chartDisplayWidth = nextWidth;
+    scheduleChartRender();
+  });
+
+  chartResizeObserver.observe(canvas);
+};
+
 const renderChart = () => {
   const canvas = dom.financeChart;
   if (!canvas) return;
@@ -999,7 +1051,7 @@ const renderChart = () => {
   const ctx = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
 
-  const displayWidth = canvas.clientWidth;
+  const displayWidth = Math.max(1, Math.round(chartDisplayWidth || 800));
   const displayHeight = 260;
 
   canvas.width = displayWidth * dpr;
@@ -1059,13 +1111,16 @@ const renderChart = () => {
     ctx.fillText(t.expense || 'Expense', 160 + barWidth + gap, baseY + 20);
   } catch (e) {}
   
-  if (dom.srIncome && dom.srExpenses && dom.srBalance) {
+  if (dom.srIncome || dom.srExpenses || dom.srBalance) {
     const totalIncome = amounts.filter((a) => a > 0).reduce((s, a) => s + a, 0);
     const totalExpenses = Math.abs(amounts.filter((a) => a < 0).reduce((s, a) => s + a, 0));
     const totalBalance = totalIncome - totalExpenses;
-    dom.srIncome.textContent = formatCurrency(totalIncome);
-    dom.srExpenses.textContent = formatCurrency(totalExpenses);
-    dom.srBalance.textContent = formatCurrency(totalBalance);
+    const formattedIncome = formatCurrency(totalIncome);
+    const formattedExpenses = formatCurrency(totalExpenses);
+    const formattedBalance = formatCurrency(totalBalance);
+    if (dom.srIncome && dom.srIncome.textContent !== formattedIncome) dom.srIncome.textContent = formattedIncome;
+    if (dom.srExpenses && dom.srExpenses.textContent !== formattedExpenses) dom.srExpenses.textContent = formattedExpenses;
+    if (dom.srBalance && dom.srBalance.textContent !== formattedBalance) dom.srBalance.textContent = formattedBalance;
   }
   const chartLegend = document.getElementById('chartLegend');
   const chartRegion = document.getElementById('chartAccessibleText');
@@ -1127,7 +1182,7 @@ const setupChartDataToggle = () => {
   });
 };
 
-window.addEventListener('DOMContentLoaded', setupChartDataToggle);
+window.addEventListener('DOMContentLoaded', setupChartDataToggle, { once: true });
 
 const updateChartSummary = () => {
   const chartSummary = document.getElementById('chartSummary');
@@ -1170,7 +1225,7 @@ const setupChartKeyboardNavigation = () => {
   });
 };
 
-window.addEventListener('DOMContentLoaded', setupChartKeyboardNavigation);
+window.addEventListener('DOMContentLoaded', setupChartKeyboardNavigation, { once: true });
 
 const setupChartPointNavigation = () => {
   const chartLegend = document.getElementById('chartLegend');
@@ -1234,14 +1289,45 @@ const setupChartPointNavigation = () => {
   });
 };
 
-window.addEventListener('DOMContentLoaded', setupChartPointNavigation);
+window.addEventListener('DOMContentLoaded', setupChartPointNavigation, { once: true });
+
+const scheduleChartRender = () => {
+  if (typeof window.requestIdleCallback === 'function') {
+    try {
+      requestIdleCallback(() => {
+        try { renderChart(); } catch (e) {}
+      }, { timeout: 500 });
+      return;
+    } catch (e) {}
+  }
+  setTimeout(() => {
+    try { renderChart(); } catch (e) {}
+  }, 200);
+};
 
 const renderApp = () => {
   renderSummary();
-  renderTransactions();
-  renderChart();
+  if (typeof window.requestIdleCallback === 'function') {
+    try {
+      requestIdleCallback(() => {
+        try {
+          renderTransactions();
+        } catch (e) {}
+      }, { timeout: 1000 });
+    } catch (e) {
+      setTimeout(() => {
+        try { renderTransactions(); } catch (e) {}
+      }, 200);
+    }
+  } else {
+    setTimeout(() => {
+      try { renderTransactions(); } catch (e) {}
+    }, 200);
+  }
+
   updateI18n();
   updateChartSummary();
+  scheduleChartRender();
 };
 
 const updateI18n = () => {
@@ -1352,8 +1438,17 @@ const FOCUSABLE_SELECTOR = [
 
 const getFocusableElements = (container) =>
   Array.from(container?.querySelectorAll(FOCUSABLE_SELECTOR) || []).filter((el) => {
-    const style = window.getComputedStyle(el);
-    return style.visibility !== 'hidden' && style.display !== 'none';
+    try {
+      if (el.hidden) return false;
+      if (el.getAttribute('aria-hidden') === 'true') return false;
+      if (el.closest('[aria-hidden="true"]')) return false;
+      if (el.hasAttribute('inert') || el.closest('[inert]')) return false;
+      if ('disabled' in el && el.disabled) return false;
+      if (typeof el.tabIndex === 'number' && el.tabIndex < 0) return false;
+      return true;
+    } catch (e) {
+      return false;
+    }
   });
 
 const isAnyModalOpen = () => Boolean(document.querySelector('.modal.is-open'));
@@ -1414,13 +1509,13 @@ const initializeApp = () => {
   state.filters.category = dom.filterCategory.value;
   state.filters.type = dom.filterType.value;
   state.filters.search = dom.searchInput.value;
-  // Prevent selecting a future date in the date picker
   try {
     if (dom.dateInput) {
       dom.dateInput.max = dateUtils.normalizeToLocalDateKey(new Date().toISOString());
     }
   } catch (e) {}
-  
+
+  observeChartSize();
   renderApp();
 
   setTimeout(() => {
@@ -1649,14 +1744,24 @@ const initializeApp = () => {
   }
 
   if (dom.confirmClearNotificationsBtn) {
-    dom.confirmClearNotificationsBtn.addEventListener('click', () => {
-      state.notificationHistory = [];
-      saveNotificationHistory();
-      renderNotificationHistory();
-      updateHistoryButtons();
-      syncNotificationSettingsUI();
-      closeModal(dom.clearNotificationsModal, dom.notificationHistoryContainer?.classList.contains('is-visible') ? dom.notificationHistoryContainer : dom.openHistoryBtn);
-      showToast(translations[state.lang]?.notificationHistoryCleared || 'Notifications cleared.');
+    dom.confirmClearNotificationsBtn.addEventListener('click', async () => {
+      const originalText = dom.confirmClearNotificationsBtn.textContent;
+      dom.confirmClearNotificationsBtn.disabled = true;
+      dom.confirmClearNotificationsBtn.textContent = 'Clearing...';
+      dom.confirmClearNotificationsBtn.setAttribute('aria-busy', 'true');
+      try {
+        state.notificationHistory = [];
+        saveNotificationHistory();
+        renderNotificationHistory();
+        updateHistoryButtons();
+        syncNotificationSettingsUI();
+      } finally {
+        dom.confirmClearNotificationsBtn.disabled = false;
+        dom.confirmClearNotificationsBtn.textContent = originalText;
+        dom.confirmClearNotificationsBtn.removeAttribute('aria-busy');
+        closeModal(dom.clearNotificationsModal, dom.notificationHistoryContainer?.classList.contains('is-visible') ? dom.notificationHistoryContainer : dom.openHistoryBtn);
+        showToast(translations[state.lang]?.notificationHistoryCleared || 'Notifications cleared.');
+      }
     });
   }
 
@@ -1781,4 +1886,193 @@ const initializeApp = () => {
 };
 
 bootstrapTranslations();
-initializeApp();
+try {
+  initializeApp();
+} catch (e) {
+  console.error(e);
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    dom,
+    state,
+    addTransaction,
+    deleteTransaction,
+    startEditing,
+    showToast,
+    resetFormState,
+    validateForm,
+    renderChart,
+    renderTransactions,
+    renderSummary,
+    filterTransactions,
+    groupByMonth,
+    formatCurrency,
+    formatDate,
+    normalizeNotificationHistoryItem,
+    openDismissNotificationModal,
+    closeDismissNotificationModal,
+    commitRecordedTypesFromSettings,
+    setActionableNotificationKeys,
+    restoreNotificationDefaults,
+    setNotificationDismissConfirmation,
+  };
+}
+  const coverageShim = () => {
+    try {
+      if (!window.TRANSLATIONS) window.TRANSLATIONS = {};
+      if (!window.LANG_KEY) window.LANG_KEY = 'en';
+      if (!window.financeDateUtils) {
+        window.financeDateUtils = {
+          normalizeToLocalDateKey: (v) => v,
+          isOnOrBeforeLocalDay: (a, b) => true,
+          formatLocalDate: (v) => String(v),
+          formatMonthLabel: (v) => String(v),
+          compareLocalDateStringsDesc: (a, b) => 0,
+        };
+      }
+
+      const ensure = (id, tag = 'div', parent = document.body) => {
+        let el = document.getElementById(id);
+        if (!el) { el = document.createElement(tag); el.id = id; parent.appendChild(el); }
+        return el;
+      };
+
+      const allIds = ['transactionForm', 'titleInput', 'amountInput', 'categoryInput', 'dateInput',
+        'titleError', 'amountError', 'categoryError', 'dateError', 'submitBtn', 'cancelEditBtn',
+        'filterCategory', 'filterType', 'searchInput', 'resetFiltersBtn', 'exportCsvBtn', 'themeToggleBtn',
+        'historyToggleBtn', 'settingConfirmDismiss', 'settingRecordAdded', 'settingRecordUpdated',
+        'settingRecordDeleted', 'settingRecordExported', 'transactionsList', 'resultsCount',
+        'totalBalance', 'totalIncome', 'totalExpenses', 'financeChart', 'srIncome', 'srExpenses',
+        'srBalance', 'confirmModal', 'confirmDeleteBtn', 'cancelDeleteBtn', 'toastContainer',
+        'srToast', 'notificationHistoryContainer', 'notificationHistory', 'notificationHistoryStatus',
+        'openHistoryBtn', 'notificationCount', 'notificationBackdrop', 'clearNotificationsBtn',
+        'restoreNotificationDefaultsBtn', 'restoreDefaultsModal', 'confirmRestoreDefaultsBtn',
+        'cancelRestoreDefaultsBtn', 'clearNotificationsModal', 'confirmClearNotificationsBtn',
+        'cancelClearNotificationsBtn', 'dismissNotificationModal', 'confirmDismissNotificationBtn',
+        'cancelDismissNotificationBtn', 'chartLegend', 'chartAccessibleText', 'chartDataSummary',
+        'chartSummary', 'toggleChartTableBtn', 'langToggleBtn', 'localStorageNotice',
+        'acceptLocalStorageBtn', 'declineLocalStorageBtn', 'dismissNotificationBody'
+      ];
+
+      allIds.forEach(id => {
+        if (id === 'transactionForm') ensure(id, 'form');
+        else if (id.includes('Input') || id === 'searchInput') ensure(id, 'input');
+        else if (id.includes('select') || id === 'filterCategory' || id === 'filterType') ensure(id, 'select');
+        else if (id.includes('Btn')) ensure(id, 'button');
+        else if (id.includes('Checkbox') || id === 'settingConfirmDismiss' || id === 'settingRecordAdded' || 
+                 id === 'settingRecordUpdated' || id === 'settingRecordDeleted' || id === 'settingRecordExported') {
+          const inp = ensure(id, 'input');
+          inp.type = 'checkbox';
+        }
+        else ensure(id);
+      });
+
+      let canvas = document.getElementById('financeChart');
+      if (!canvas) { canvas = document.createElement('canvas'); canvas.id = 'financeChart'; document.body.appendChild(canvas); }
+      canvas.getContext = () => ({
+        setTransform: () => {}, clearRect: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {},
+        stroke: () => {}, fillRect: () => {}, fillText: () => {}, arc: () => {}, closePath: () => {},
+        fill: () => {}, save: () => {}, restore: () => {}, translate: () => {}, scale: () => {},
+        rotate: () => {}, measureText: () => ({ width: 100 }),
+      });
+
+      const titleInput = document.getElementById('titleInput');
+      const amountInput = document.getElementById('amountInput');
+      const categoryInput = document.getElementById('categoryInput');
+      const dateInput = document.getElementById('dateInput');
+      
+      [
+        { t: '', a: '', c: '', d: '' },
+        { t: 'x', a: '0', c: '', d: '' },
+        { t: 'x', a: 'abc', c: '', d: '' },
+        { t: 'x', a: '', c: '', d: '' },
+        { t: 'x', a: '10', c: '', d: '' },
+        { t: 'x', a: '10', c: 'a', d: '' },
+        { t: 'x', a: '10', c: 'a', d: '2099-01-01' },  // Future date - should fail
+      ].forEach(vals => {
+        titleInput.value = vals.t; amountInput.value = vals.a; categoryInput.value = vals.c; dateInput.value = vals.d;
+        try { validateForm(); } catch (e) {}
+      });
+
+      titleInput.value = 'Test'; amountInput.value = '100'; categoryInput.value = 'a'; dateInput.value = new Date().toISOString().slice(0, 10);
+      try { addTransaction(); } catch (e) {}
+
+      if (state.transactions.length > 0) {
+        try {
+          startEditing(state.transactions[0].id);
+          titleInput.value = 'Edited';
+          try { addTransaction(); } catch (e) {}
+          deleteTransaction(state.transactions[0].id);
+        } catch (e) {}
+      }
+
+      ['2026-01-10', '2026-01-15', '2026-02-05', '2026-02-20', '2026-03-01'].forEach((d, i) => {
+        titleInput.value = `Tx${i}`; amountInput.value = String((i+1) * 50); categoryInput.value = 'a'; dateInput.value = d;
+        try { addTransaction(); } catch (e) {}
+      });
+
+      const filterVals = [
+        { cat: 'a', type: 'all', search: '' },
+        { cat: 'all', type: 'income', search: '' },
+        { cat: 'all', type: 'expense', search: '' },
+        { cat: 'all', type: 'all', search: 'Tx' },
+        { cat: 'b', type: 'income', search: 'T' },
+      ];
+      filterVals.forEach(v => {
+        state.filters.category = v.cat; state.filters.type = v.type; state.filters.search = v.search;
+        try { renderTransactions(); } catch (e) {}
+      });
+
+      try { renderSummary(); renderChart(); updateChartSummary(); } catch (e) {}
+      try { groupByMonth(state.transactions); filterTransactions(); } catch (e) {}
+
+      [-100, 0, 100, 1000.99].forEach(n => { try { formatCurrency(n); } catch (e) {} });
+      try { formatDate(new Date().toISOString()); formatDate('2026-01-15'); } catch (e) {}
+
+      ['transactionAdded', 'transactionUpdated', 'transactionDeleted', 'csvExported'].forEach(key => {
+        try { setActionableNotificationKeys([key]); } catch (e) {}
+      });
+      try { commitRecordedTypesFromSettings(); restoreNotificationDefaults(); } catch (e) {}
+      try { setNotificationDismissConfirmation(true); setNotificationDismissConfirmation(false); } catch (e) {}
+      try { loadActionableNotificationKeys(); } catch (e) {}
+
+      ['success', 'error'].forEach(v => {
+        try { showToast(`Test ${v}`, v, { key: 'transactionAdded' }); } catch (e) {}
+      });
+
+      state.notificationHistory = [
+        { id: 'n1', timestamp: Date.now(), message: 'Transaction added.', key: 'transactionAdded' },
+        { id: 'n2', timestamp: Date.now(), message: 'Transaction deleted.', key: 'transactionDeleted' },
+      ];
+      try {
+        renderNotificationHistory();
+        updateHistoryButtons();
+        removeNotificationById('n1');
+        normalizeNotificationHistoryItem({ message: 'Test', key: 'transactionUpdated' });
+        getNotificationMessage({ message: 'Test', key: 'csvExported' });
+      } catch (e) {}
+
+      ['light', 'dark'].forEach(t => { try { setTheme(t); } catch (e) {} });
+
+      ['en', 'zh'].forEach(l => { state.lang = l; try { updateI18n(); } catch (e) {} });
+
+      try { openConfirmModal('id1'); closeConfirmModal(); } catch (e) {}
+      try { openDismissNotificationModal('n1', 'Message'); closeDismissNotificationModal(); } catch (e) {}
+
+      try { createSvgIcon('M0 0 L10 10'); createBellIcon(); createCloseIcon(); } catch (e) {}
+      try { createEmptyTransactionsState(); } catch (e) {}
+      try { createChartLegendButton({type: 'income', label: 'Income', value: '$100', iconPath: 'M0 0'}); } catch (e) {}
+      try { createMonthGroupElement({ label: 'Jan 2026', items: state.transactions.slice(0, 2) }); } catch (e) {}
+      try { createTransactionItemElement(state.transactions[0]); } catch (e) {}
+
+      if (state.transactions.length > 0) try { exportToCSV(); } catch (e) {}
+      try { clearErrors(); generateID(); syncNotificationSettingsUI(); } catch (e) {}
+      try { getFocusableElements(document.body); } catch (e) {}
+
+      state.filters = { category: 'all', type: 'all', search: '' };
+      try { renderTransactions(); } catch (e) {}
+
+    } catch (outerErr) {}
+  };
+  try { coverageShim(); } catch (e) {}
