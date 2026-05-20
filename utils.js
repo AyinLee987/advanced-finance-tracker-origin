@@ -1,7 +1,6 @@
-export const generateID = () =>
-  `tx_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+const generateID = () => `tx_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-export const escapeHtml = (str) =>
+const escapeHtml = (str) =>
   String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -9,17 +8,17 @@ export const escapeHtml = (str) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-export const formatCurrency = (amount) =>
+const formatCurrency = (amount) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 
 // Fix: parse date parts manually to avoid UTC→local timezone shift
-export const formatDate = (dateString) => {
+const formatDate = (dateString) => {
   const [year, month, day] = dateString.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 };
 
-export const filterTransactions = (transactions, filters) => {
+const filterTransactions = (transactions, filters) => {
   const { category, type, search } = filters;
   return transactions.filter((tx) => {
     const matchesCategory = category === "all" || tx.category === category;
@@ -32,7 +31,7 @@ export const filterTransactions = (transactions, filters) => {
   });
 };
 
-export const groupByMonth = (transactions) => {
+const groupByMonth = (transactions) => {
   const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
   const groups = [];
   const lookup = new Map();
@@ -51,7 +50,7 @@ export const groupByMonth = (transactions) => {
   return groups;
 };
 
-export const validateFormData = (title, amountValue, category, date) => {
+const validateFormData = (title, amountValue, category, date) => {
   const errors = {};
   if (!title || !String(title).trim()) errors.title = "Title is required.";
   const amount = Number(amountValue);
@@ -61,3 +60,21 @@ export const validateFormData = (title, amountValue, category, date) => {
   if (!date) errors.date = "Pick a date.";
   return { isValid: Object.keys(errors).length === 0, errors };
 };
+
+const api = {
+  generateID,
+  escapeHtml,
+  formatCurrency,
+  formatDate,
+  filterTransactions,
+  groupByMonth,
+  validateFormData,
+};
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = api;
+}
+
+if (typeof window !== "undefined") {
+  window.financeUtils = api;
+}

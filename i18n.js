@@ -155,6 +155,7 @@ window.TRANSLATIONS = {
     skipToNotifications: "Skip to notification history",
     notificationHistoryTitle: "Notification History",
     notificationHistoryEmpty: "No notifications.",
+    notificationHistoryStatus: "{count} notifications in history.",
     clearNotifications: "Clear notifications",
     dismissNotification: "Dismiss notification",
     notificationHistoryCleared: "Notifications cleared.",
@@ -221,7 +222,7 @@ window.TRANSLATIONS = {
     delete: "删除",
     privacyPolicy: "隐私政策",
     cookieMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptCookies: "接受",
     declineCookies: "拒绝",
     editBtn: "编辑",
@@ -308,11 +309,11 @@ window.TRANSLATIONS = {
       <p data-i18n="privacy_contact">如您对本隐私政策有疑问，请在项目 GitHub 仓库中提交 issue。</p>
     `,
     localStorageMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptLocalStorage: "接受",
     declineLocalStorage: "拒绝",
     cookieMsg:
-      "我们使用本地存储 (Local Storage) 在本地存储您的偏好和交易数据。数据不会与第三方共享。",
+      "我们使用浏览器的本地存储来在本地保存您的偏好和交易数据。数据不会与第三方共享。",
     acceptCookies: "接受",
     declineCookies: "拒绝",
     chart_table_toggle: "查看数据表格",
@@ -335,6 +336,7 @@ window.TRANSLATIONS = {
     skipToNotifications: "跳到通知历史",
     notificationHistoryTitle: "通知历史",
     notificationHistoryEmpty: "暂无通知。",
+    notificationHistoryStatus: "历史记录中有 {count} 条通知。",
     clearNotifications: "清除通知",
     dismissNotification: "关闭通知",
     notificationHistoryCleared: "通知已清除。",
