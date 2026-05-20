@@ -11,7 +11,7 @@
  * Body: { level: string, message: string, data?: any, timestamp: string }
  */
 
-export default function handler(request, response) {
+function handler(request, response) {
   // Handle CORS preflight
   if (request.method === "OPTIONS") {
     response.status(200).end();
@@ -48,3 +48,6 @@ export default function handler(request, response) {
     response.status(500).json({ error: "Internal server error" });
   }
 }
+
+module.exports = handler;
+module.exports.default = handler;
